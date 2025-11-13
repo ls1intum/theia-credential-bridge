@@ -32,9 +32,17 @@ jobs:
                 node-version: 24
                 cache: "pnpm"
 
+            - name: Strip v from version
+              id: strip-v
+              if: inputs.version != '0.0.0'
+              shell: bash
+              run: |
+                TAG=${{ inputs.version }}
+                echo "VERSION=${TAG#v}" >> $GITHUB_OUTPUT
+
             - name: Change version
               if: inputs.version != '0.0.0'
-              run: pnpm version ${{ inputs.version }} --no-git-tag-version
+              run: pnpm version ${{ steps.strip-v.outputs.VERSION }} --no-git-tag-version --allow-same-version
 
             - name: Install Dependencies
               run: pnpm install --frozen-lockfile
