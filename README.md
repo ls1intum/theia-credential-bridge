@@ -1,71 +1,233 @@
-# theia-credential-bridge README
+# Theia Credential Bridge
 
-This is the README for your extension "theia-credential-bridge". After writing up a brief description, we recommend including the following sections.
+A VS Code/Theia extension that enables runtime credential injection for cloud-based IDEs. This extension runs an HTTP server that allows external systems (like Artemis) to inject credentials and configuration into running IDE instances.
+
+## Overview
+
+When students launch cloud-based Theia IDEs from Artemis for programming exercises, they need automatic access to their Git repositories without manual credential configuration. This extension provides a secure bridge for injecting these credentials at runtime.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 🚀 **Automatic Activation**: Starts on IDE startup
+- 🌐 **HTTP API**: Localhost server for credential injection
+- 🔒 **Secure**: Only listens on `127.0.0.1` (localhost)
+- 📦 **Zero Configuration**: Works out of the box
+- 🔍 **Logging**: Comprehensive logging for debugging
 
-For example if there is an image subfolder under your extension project workspace:
+## How It Works
 
-\!\[feature X\]\(images/feature-x.png\)
+```
+┌─────────────────┐         ┌──────────────────┐
+│  Artemis LMS    │         │  Theia IDE       │
+│                 │         │  ┌────────────┐  │
+│                 │  HTTP   │  │ Credential │  │
+│                 ├────────►│  │  Bridge    │  │
+│  (sends creds)  │         │  │  Extension │  │
+│                 │         │  └────────────┘  │
+└─────────────────┘         │                  │
+                            │  Injects into:   │
+                            │  - Git config    │
+                            │  - Environment   │
+                            └──────────────────┘
+```
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## API Endpoints
 
-## Requirements
+The extension exposes the following HTTP endpoints on `http://127.0.0.1:16281`:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### `GET /`
+Health check endpoint
+```bash
+curl http://127.0.0.1:16281/
+# Response: "Hello World!"
+```
 
-## Extension Settings
+### `GET /health`
+Detailed health status
+```bash
+curl http://127.0.0.1:16281/health
+```
+```json
+{
+  "status": "ok",
+  "timestamp": "2025-01-15T10:30:00.000Z",
+  "service": "theia-credential-bridge"
+}
+```
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### `POST /credentials` (Placeholder)
+Inject credentials (not yet implemented)
+```bash
+curl -X POST http://127.0.0.1:16281/credentials \
+  -H "Content-Type: application/json" \
+  -d '{"username": "user", "token": "..."}'
+```
 
-For example:
+## Installation
 
-This extension contributes the following settings:
+### From VSIX File
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+1. Download the `.vsix` file from the [Releases](../../releases) page
+2. In VS Code/Theia:
+   - Open Extensions view (`Cmd+Shift+X` or `Ctrl+Shift+X`)
+   - Click "..." menu → "Install from VSIX..."
+   - Select the downloaded file
 
-## Known Issues
+### From Command Line
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+```bash
+code --install-extension theia-credential-bridge-X.Y.Z.vsix
+```
 
-## Release Notes
+## Development
 
-Users appreciate release notes as you update your extension.
+### Prerequisites
 
-### 1.0.0
+- Node.js 22.x
+- pnpm 9.x
 
-Initial release of ...
+### Setup
 
-### 1.0.1
+```bash
+# Install dependencies
+pnpm install
 
-Fixed issue #.
+# Compile TypeScript
+pnpm run compile
 
-### 1.1.0
+# Watch mode for development
+pnpm run watch:esbuild
+```
 
-Added features X, Y, and Z.
+### Running in Development
+
+1. Open the project in VS Code
+2. Press `F5` to start debugging
+3. A new "Extension Development Host" window will open
+4. The extension will be activated automatically
+5. Test the server:
+   ```bash
+   curl http://127.0.0.1:16281/health
+   ```
+
+### Building
+
+```bash
+# Build for production
+pnpm run build
+
+# Package as .vsix
+pnpm run package
+```
+
+### Testing
+
+```bash
+# Run tests
+pnpm run test
+
+# Test the HTTP server (extension must be running)
+node test-server.js
+```
+
+## Configuration
+
+Currently, no configuration is required. The extension:
+- Activates on startup (`onStartupFinished`)
+- Listens on `127.0.0.1:16281`
+- Logs to the "theia-credential-bridge" output channel
+
+Future versions may add configurable settings for:
+- Port number
+- Hostname
+- Authentication
+- Allowed origins
+
+## Security Considerations
+
+- **Localhost Only**: The server binds to `127.0.0.1`, making it inaccessible from other machines
+- **No CORS**: Currently no CORS headers are set (localhost only)
+- **No Authentication**: Future versions should implement authentication
+- **Plain HTTP**: For localhost communication only
+
+## Troubleshooting
+
+### Extension Not Starting
+
+1. Check the Output panel: `View → Output`
+2. Select "theia-credential-bridge" from the dropdown
+3. Look for activation messages
+
+### Server Not Responding
+
+1. Verify the extension is activated:
+   ```bash
+   # Should return "Hello World!"
+   curl http://127.0.0.1:16281/
+   ```
+
+2. Check if port is in use:
+   ```bash
+   lsof -i :16281
+   ```
+
+3. Check extension logs in Output panel
+
+### Port Already in Use
+
+If another process is using port 16281:
+```bash
+# Find the process
+lsof -i :16281
+
+# Kill it (if safe to do so)
+kill -9 <PID>
+```
+
+## Architecture
+
+This extension uses:
+- **Hono**: Lightweight web framework for the HTTP server
+- **@hono/node-server**: Node.js adapter for Hono
+- **esbuild**: Fast bundler for production builds
+- **TypeScript**: Type-safe development
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+- TypeScript types are correct (`pnpm run ts:check`)
+- Code passes linting (`pnpm run lint`)
+- Extension builds successfully (`pnpm run build`)
+
+## Release Process
+
+See [RELEASE.md](RELEASE.md) for detailed instructions on creating releases.
+
+## Roadmap
+
+- [ ] Implement credential injection logic
+- [ ] Add authentication/authorization
+- [ ] Support for different credential types (SSH keys, tokens, etc.)
+- [ ] Configuration options via VS Code settings
+- [ ] Integration with VS Code secret storage
+- [ ] Support for Eclipse Theia-specific features
+
+## License
+
+[Add license information]
+
+## Related Projects
+
+- [Eclipse Theia](https://theia-ide.org/)
+- [Artemis](https://github.com/ls1intum/Artemis) - Learning Management System
+- [Theia Cloud](https://github.com/eclipsesource/theia-cloud) - Kubernetes-based Theia deployment
+
+## Support
+
+For issues and questions:
+- GitHub Issues: [Report a bug](../../issues)
+- Documentation: See docs/ directory
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Note**: This extension is designed primarily for cloud-based Eclipse Theia deployments integrated with the Artemis learning management system, but can be used in any VS Code/Theia environment requiring runtime credential injection.
