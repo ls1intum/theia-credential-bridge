@@ -18,27 +18,6 @@ app.get("/health", (c) => {
     });
 });
 
-// Example credential endpoint (placeholder for future implementation)
-app.post("/credentials", async (c) => {
-    console.log("[theia-credential-bridge] POST /credentials");
-    try {
-        const body = await c.req.json();
-        console.log("[theia-credential-bridge] Received credentials request:", body);
-        
-        // TODO: Implement credential injection logic
-        return c.json({
-            success: true,
-            message: "Credential injection not yet implemented"
-        });
-    } catch (error) {
-        console.error("[theia-credential-bridge] Error processing request:", error);
-        return c.json({
-            success: false,
-            error: "Invalid request body"
-        }, 400);
-    }
-});
-
 // 404 handler
 app.notFound((c) => {
     console.log(`[theia-credential-bridge] 404 - Not found: ${c.req.path}`);
