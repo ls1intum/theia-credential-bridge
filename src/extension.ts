@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     try {
         const port = 16281;
-        const hostname = "127.0.0.1";
+        const hostname = "0.0.0.0";
 
         server = serve({
             ...app,
