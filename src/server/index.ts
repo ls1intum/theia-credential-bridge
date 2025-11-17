@@ -8,7 +8,7 @@ const app = new Hono();
 
 // Health check endpoint
 app.post(
-    "/credentials/inject",
+    "/credentials",
     validator("form", (value, c) => {
         const parsed = credentialInjectRequestSchema(value);
         if (parsed instanceof type.errors) {
