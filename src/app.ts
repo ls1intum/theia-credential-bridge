@@ -11,7 +11,7 @@ function createApp() {
     // Health check endpoint
     app.post(
         "/credentials",
-        validator("form", (value, c) => {
+        validator("json", (value, c) => {
             const parsed = credentialInjectRequestSchema(value);
             if (parsed instanceof type.errors) {
                 return c.json(
@@ -24,7 +24,7 @@ function createApp() {
             return parsed;
         }),
         async (c) => {
-            const body = c.req.valid("form");
+            const body = c.req.valid("json");
             const response = credentialService.inject(body);
             return c.json(response);
         },
@@ -38,7 +38,7 @@ function createApp() {
 
     // 404 handler
     app.notFound((c) => {
-        console.log(`[theia-credential-bridge] 404 - Not found: ${c.req.path}`);
+        console.log(`[credential-bridge] 404 - Not found: ${c.req.path}`);
         return c.json(
             {
                 error: "Not found",
@@ -50,7 +50,7 @@ function createApp() {
 
     // Error handler
     app.onError((err, c) => {
-        console.error("[theia-credential-bridge] Error:", err);
+        console.error("[credential-bridge] Error:", err);
         return c.json(
             {
                 error: "Internal server error",
@@ -75,11 +75,11 @@ export function startServer(): ServerType | undefined {
             hostname,
         });
 
-        console.log(`[theia-credential-bridge] HTTP server started on http://${hostname}:${port}`);
+        console.log(`[credential-bridge] HTTP server started on http://${hostname}:${port}`);
 
         return server;
     } catch (error) {
-        console.error("[theia-credential-bridge] Failed to start server:", error);
+        console.error("[credential-bridge] Failed to start server:", error);
         return undefined;
     }
 }
