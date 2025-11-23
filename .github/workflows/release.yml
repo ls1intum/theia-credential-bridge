@@ -25,7 +25,7 @@ jobs:
             - name: Download VSIX artifact
               uses: actions/download-artifact@v4
               with:
-                  name: theia-credential-bridge-${{ github.event.release.tag_name }}.vsix
+                  name: credential-bridge-${{ github.event.release.tag_name }}.vsix
                   path: .
 
             - uses: pnpm/action-setup@v4
