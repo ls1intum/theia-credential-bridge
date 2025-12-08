@@ -1,15 +1,27 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from "vscode";
-import { startServer } from "./app.ts";
-import CommandRegistry from "./service/commands.ts";
-import logger from "./service/logger.ts";
+import type * as vscode from "vscode";
+import { execSync } from "child_process";
 
-let server: ReturnType<typeof startServer>;
+let server: ReturnType<(typeof import("./app.ts"))["startServer"]>;
 
 // This method is called when your extension is activated
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+    // bailout if the data bridge is not enabled
+    const dataBridgeEnvVar = execSync("echo $DATA_BRIDGE_ENABLED").toString().trim();
+    if (!["1", "true"].includes(dataBridgeEnvVar)) {
+        return;
+    }
+
+    // import only if the extension should be activated
+    const [{ startServer }, { default: logger }, { default: CommandRegistry }] = await Promise.all([
+        import("./app.ts"),
+        import("./service/logger.ts"),
+        import("./service/commands.ts"),
+    ]);
+
     const commandRegistry = new CommandRegistry(context);
+
     commandRegistry.registerCommands();
 
     server = startServer();
@@ -19,8 +31,9 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {
+export async function deactivate() {
     if (server) {
+        const logger = await import("./service/logger.ts").then((module) => module.default);
         logger.info("Shutting down HTTP server");
         server.close();
     }
